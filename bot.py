@@ -61,4 +61,30 @@ async def on_ready():
     if not send_message.is_running():
         send_message.start()
 
+# Perintah untuk menampilkan rating pengguna
+@bot.command()
+async def rating(ctx):
+    res = manager.get_rating()
+    res = [f'| @{x[0]:<11} | {x[1]:<11}|\n{"_"*26}' for x in res]
+    res = '\n'.join(res)
+    res = f'|USER_NAME    |COUNT_PRIZE|\n{"_"*26}\n' + res
+    await ctx.send(f"```\n{res}\n```")
+@bot.event
+async def on_interaction(interaction):
+    if interaction.type == discord.InteractionType.component:
+        custom_id = interaction.data['custom_id']
+        user_id = interaction.user.id
+
+        if manager.get_winners_count(custom_id) < 3:
+            res = manager.add_winner(user_id, custom_id)
+            if res:
+                img = manager.get_prize_img(custom_id)
+                with open(f'img/{img}', 'rb') as photo:
+                    file = discord.File(photo)
+                    await interaction.response.send_message(file=file, content="Selamat, kamu mendapatkan gambar!")
+            else:
+                await interaction.response.send_message(content="Kamu sudah memiliki gambar ini!", ephemeral=True)
+        else:
+            await interaction.response.send_message(content="Maaf, gambar ini sudah diambil oleh orang lain...", ephemeral=True)
+
 bot.run(TOKEN)
